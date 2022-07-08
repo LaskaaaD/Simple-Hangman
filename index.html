@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pl-PL">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hangman</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background-color: #ffe4c4;
+        font-family: sans-serif;
+      }
+      .container {
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+        justify-content: center;
+      }
+      .hangman-display {
+        width: 512px;
+        height: 512px;
+        justify-self: center;
+      }
+      .hangman-display img {
+        width: 100%;
+      }
+      .letters {
+        margin-top: 20px;
+        width: 450px;
+        justify-self: center;
+      }
+      .letters .letter {
+        width: 40px;
+        padding: 10px;
+        margin: 5px;
+        background-color: #80613c;
+        color: #ffe4c4;
+        border: 1px solid #ffc278;
+        border-radius: 10px;
+        text-transform: uppercase;
+        font-size: 18px;
+      }
+      .letters .letter:hover:not([disabled]) {
+        background-color: #918373;
+        cursor: pointer;
+      }
+      .letters .letter:disabled,
+      .letters .letter[disabled] {
+        opacity: 0.7;
+      }
+      .guess-word {
+        text-align: center;
+        margin-top: 50px;
+      }
+      .guess-word .char {
+        display: inline-block;
+        margin-right: 10px;
+      }
+      .layer {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        z-index: 10;
+        background-color: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 64px;
+        font-weight: 700;
+        color: #ffe4c4;
+        display: none;
+      }
+      .layer button {
+        margin-top: 50px;
+        padding: 25px;
+        border: none;
+        outline: none;
+        background-color: #80613c;
+        border-radius: 15px;
+        font-size: 28px;
+        font-weight: 600;
+        color: #ffe4c4;
+      }
+      .layer button:hover {
+        cursor: pointer;
+      }
+      .visible {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body onload="start()">
+    <div class="container">
+      <div class="hangman-display"></div>
+      <div class="guess-word"></div>
+      <div class="letters"></div>
+    </div>
+    <div class="layer">
+      Congratulations! You win!!! <br /><button class="l-btn">Play</button>
+    </div>
+    <script>
+      function start() {
+        const guessWord = document.querySelector('.guess-word');
+        const letters = document.querySelector('.letters');
+        const layer = document.querySelector('.layer');
+        const hangman = document.querySelector('.hangman-display');
+        let lifeCount = 1;
+        const words = ['chocolate', 'milk', 'apple', 'hard', 'friendly'];
+
+        //letter to html
+        for (const i of 'abcdefghijklmnopqrstuvwzyx') {
+          let letter = document.createElement('button');
+          letter.classList.add('letter');
+          letter.innerHTML = i;
+          letters.appendChild(letter);
+        }
+
+        // random word
+        let randomNumber = Math.floor(Math.random() * words.length);
+        let selectedWord = words[randomNumber];
+        for (let i = 0; i < selectedWord.length; i++) {
+          let p = document.createElement('p');
+          p.classList.add('char');
+          p.innerHTML = '_';
+          guessWord.appendChild(p);
+        }
+
+        //resetGame
+        const resetGame = () => {
+          const letters = document.querySelectorAll('.letter');
+          const hangman = document.querySelector('.hangman-display');
+          randomNumber = Math.floor(Math.random() * words.length);
+          selectedWord = words[randomNumber];
+          chars = document.querySelectorAll('.char');
+          lifeCount = 1;
+          chars.forEach((char) => {
+            char.remove();
+          });
+          letters.forEach((letter) => {
+            letter.disabled = false;
+          });
+          for (let i = 0; i < selectedWord.length; i++) {
+            let p = document.createElement('p');
+            p.classList.add('char');
+            p.innerHTML = '_';
+            guessWord.appendChild(p);
+          }
+        };
+
+        //btn click
+        let btns = document.querySelectorAll('.letter');
+
+        const letterClick = function () {
+          let letter = this.textContent;
+          let chars = document.querySelectorAll('.char');
+
+          if (selectedWord.includes(letter)) {
+            const array = [];
+            for (let i = 0; i < selectedWord.length; i++) {
+              array[i] = selectedWord.charAt(i);
+            }
+            for (let i = 0; i < array.length; i++) {
+              if (array[i] === letter) {
+                chars[i].innerHTML = letter;
+              }
+            }
+          } else {
+            hangman.innerHTML = `<img src="./hm${lifeCount}.png" >`;
+            lifeCount++;
+            if (lifeCount >= 12) {
+              layerShow('You lost, gl in next!', 'Try again');
+              setTimeout(() => {
+                resetGame();
+              }, 100);
+            }
+          }
+
+          this.disabled = true;
+          winGame(chars, selectedWord);
+        };
+
+        btns.forEach((btn) => {
+          btn.addEventListener('click', letterClick);
+        });
+
+        const winGame = (chars, word) => {
+          let wordFromChars = '';
+          chars.forEach((char) => {
+            wordFromChars += char.textContent;
+          });
+          if (word === wordFromChars) {
+            layerShow('Congratulations! You Won!', 'Next round');
+            setTimeout(() => {
+              resetGame();
+            }, 100);
+          }
+        };
+
+        const layerShow = (text, btn) => {
+          const layer = document.querySelector('.layer');
+          const hangman = document.querySelector('.hangman-display');
+          layer.innerHTML = `${text} <button class="l-btn">${btn}</button>`;
+
+          const layerBtn = document.querySelector('.layer button');
+          layerBtn.addEventListener('click', () => {
+            layer.classList.remove('visible');
+            hangman.innerHTML = '';
+          });
+          layer.classList.add('visible');
+        };
+      }
+    </script>
+  </body>
+</html>
